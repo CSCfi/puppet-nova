@@ -12,6 +12,7 @@ class nova::keystone::auth(
   $tenant                 = 'services',
   $email                  = 'nova@localhost',
   $configure_ec2_endpoint = true,
+  $configure_user         = true,
   $cinder                 = undef,
   $public_protocol        = 'http'
 ) {
@@ -22,16 +23,19 @@ class nova::keystone::auth(
 
   Keystone_endpoint["${region}/${auth_name}"] ~> Service <| name == 'nova-api' |>
 
-  keystone_user { $auth_name:
-    ensure   => present,
-    password => $password,
-    email    => $email,
-    tenant   => $tenant,
+  if $configure_user {
+    keystone_user { $auth_name:
+      ensure   => present,
+      password => $password,
+      email    => $email,
+      tenant   => $tenant,
+    }
+    keystone_user_role { "${auth_name}@${tenant}":
+      ensure  => present,
+      roles   => 'admin',
+    }
   }
-  keystone_user_role { "${auth_name}@${tenant}":
-    ensure  => present,
-    roles   => 'admin',
-  }
+
   keystone_service { $auth_name:
     ensure      => present,
     type        => 'compute',
