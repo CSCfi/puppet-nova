@@ -16,7 +16,8 @@ class nova::keystone::auth(
   $configure_ec2_endpoint = true,
   $configure_user         = true,
   $cinder                 = undef,
-  $public_protocol        = 'http'
+  $public_protocol        = 'http',
+  $admin_protocol         = 'http'
 ) {
 
   if ! $public_compute_port {
@@ -58,7 +59,7 @@ class nova::keystone::auth(
   keystone_endpoint { "${region}/${auth_name}":
     ensure       => present,
     public_url   => "${public_protocol}://${public_address}:${real_public_compute_port}/${compute_version}/%(tenant_id)s",
-    admin_url    => "http://${admin_address}:${compute_port}/${compute_version}/%(tenant_id)s",
+    admin_url    => "${admin_protocol}://${admin_address}:${compute_port}/${compute_version}/%(tenant_id)s",
     internal_url => "http://${internal_address}:${compute_port}/${compute_version}/%(tenant_id)s",
   }
 
@@ -71,7 +72,7 @@ class nova::keystone::auth(
     keystone_endpoint { "${region}/${auth_name}_ec2":
       ensure       => present,
       public_url   => "${public_protocol}://${public_address}:${real_public_ec2_port}/services/Cloud",
-      admin_url    => "http://${admin_address}:${ec2_port}/services/Admin",
+      admin_url    => "${admin_protocol}://${admin_address}:${ec2_port}/services/Admin",
       internal_url => "http://${internal_address}:${ec2_port}/services/Cloud",
     }
   }
