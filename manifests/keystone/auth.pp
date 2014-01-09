@@ -7,6 +7,8 @@ class nova::keystone::auth(
   $internal_address       = '127.0.0.1',
   $compute_port           = '8774',
   $public_compute_port    = undef,
+  $admin_compute_port     = undef,
+  $internal_compute_port  = undef,
   $ec2_port               = '8773',
   $public_ec2_port        = undef,
   $compute_version        = 'v2',
@@ -24,6 +26,18 @@ class nova::keystone::auth(
     $real_public_compute_port = $compute_port
   } else {
     $real_public_compute_port = $public_compute_port
+  }
+
+  if ! $admin_compute_port {
+    $real_admin_compute_port = $compute_port
+  } else {
+    $real_admin_compute_port = $admin_compute_port
+  }
+
+  if ! $internal_compute_port {
+    $real_internal_compute_port = $compute_port
+  } else {
+    $real_internal_compute_port = $internal_compute_port
   }
 
   if ! $public_ec2_port {
@@ -59,8 +73,8 @@ class nova::keystone::auth(
   keystone_endpoint { "${region}/${auth_name}":
     ensure       => present,
     public_url   => "${public_protocol}://${public_address}:${real_public_compute_port}/${compute_version}/%(tenant_id)s",
-    admin_url    => "${admin_protocol}://${admin_address}:${compute_port}/${compute_version}/%(tenant_id)s",
-    internal_url => "http://${internal_address}:${compute_port}/${compute_version}/%(tenant_id)s",
+    admin_url    => "${admin_protocol}://${admin_address}:${real_admin_compute_port}/${compute_version}/%(tenant_id)s",
+    internal_url => "http://${internal_address}:${real_internal_compute_port}/${compute_version}/%(tenant_id)s",
   }
 
   if $configure_ec2_endpoint {
