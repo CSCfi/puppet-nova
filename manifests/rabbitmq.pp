@@ -14,13 +14,14 @@ class nova::rabbitmq(
   $port               ='5672',
   $virtual_host       ='/',
   $cluster_disk_nodes = false,
-  $enabled            = true
+  $enabled            = true,
+  $configured         = true
 ) {
 
   # only configure nova after the queue is up
   Class['rabbitmq::service'] -> Anchor<| title == 'nova-start' |>
 
-  if ($enabled) {
+  if ($configured) {
     if $userid == 'guest' {
       $delete_guest_user = false
     } else {
@@ -39,6 +40,9 @@ class nova::rabbitmq(
         provider             => 'rabbitmqctl',
       }->Anchor<| title == 'nova-start' |>
     }
+  }
+
+  if ($enabled) {
     $service_ensure = 'running'
   } else {
     $service_ensure = 'stopped'
@@ -61,7 +65,7 @@ class nova::rabbitmq(
     }
   }
 
-  if ($enabled) {
+  if ($configured) {
     rabbitmq_vhost { $virtual_host:
       provider => 'rabbitmqctl',
       require  => Class['rabbitmq::server'],
