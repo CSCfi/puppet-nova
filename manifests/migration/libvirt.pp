@@ -38,6 +38,36 @@ class nova::migration::libvirt {
         match => 'libvirtd_opts=',
       }
     }
+    'CentOS': {
+      file_line { '/etc/libvirt/libvirtd.conf listen_tls':
+        path   => '/etc/libvirt/libvirtd.conf',
+        line   => 'listen_tls = 0',
+        match  => 'listen_tls =',
+        notify => Service['libvirt'],
+      }
+
+      file_line { '/etc/libvirt/libvirtd.conf listen_tcp':
+        path   => '/etc/libvirt/libvirtd.conf',
+        line   => 'listen_tcp = 1',
+        match  => 'listen_tcp =',
+        notify => Service['libvirt'],
+      }
+
+      file_line { '/etc/libvirt/libvirtd.conf auth_tcp':
+        path   => '/etc/libvirt/libvirtd.conf',
+        line   => 'auth_tcp = "none"',
+        match  => 'auth_tcp =',
+        notify => Service['libvirt'],
+      }
+
+      file_line { '/etc/sysconfig/libvirtd LIBVIRTD_ARGS':
+        path   => '/etc/sysconfig/libvirtd',
+        line   => 'LIBVIRTD_ARGS="--listen"',
+        match  => 'LIBVIRTD_ARGS=',
+        notify => Service['libvirt'],
+      }
+
+    }
     default:  {
       warning("Unsupported operating system: ${::lsbdistid}, make sure you are configuring this yourself")
     }
