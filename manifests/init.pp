@@ -81,6 +81,7 @@ class nova(
   $monitoring_notifications = false,
   $use_syslog = false,
   $log_facility = 'LOG_USER',
+  $nova_user_shell = false,
 ) inherits nova::params {
 
   # all nova_config resources should be applied
@@ -127,13 +128,25 @@ class nova(
     ensure  => present,
     system  => true,
     require => Package['nova-common'],
+
   }
-  user { 'nova':
-    ensure  => present,
-    gid     => 'nova',
-    system  => true,
-    require => Package['nova-common'],
+  if $nova_user_shell {
+    user { 'nova':
+      ensure  => present,
+      gid     => 'nova',
+      system  => true,
+      shell   => "/bin/bash",
+      require => Package['nova-common'],
+    }
+  } else {
+    user { 'nova':
+      ensure  => present,
+      gid     => 'nova',
+      system  => true,
+      require => Package['nova-common'],
+    }
   }
+ 
 
   file { $logdir:
     ensure  => directory,
