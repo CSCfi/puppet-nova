@@ -15,6 +15,7 @@ class nova::keystone::auth(
   $region                 = 'RegionOne',
   $tenant                 = 'services',
   $email                  = 'nova@localhost',
+  $configure_endpoint     = true,
   $configure_ec2_endpoint = true,
   $configure_user         = true,
   $cinder                 = undef,
@@ -50,8 +51,6 @@ class nova::keystone::auth(
     warning('cinder parameter is deprecated and has no effect.')
   }
 
-  Keystone_endpoint["${region}/${auth_name}"] ~> Service <| name == 'nova-api' |>
-
   if $configure_user {
     keystone_user { $auth_name:
       ensure   => present,
@@ -65,16 +64,21 @@ class nova::keystone::auth(
     }
   }
 
-  keystone_service { $auth_name:
-    ensure      => present,
-    type        => 'compute',
-    description => 'Openstack Compute Service',
-  }
-  keystone_endpoint { "${region}/${auth_name}":
-    ensure       => present,
-    public_url   => "${public_protocol}://${public_address}:${real_public_compute_port}/${compute_version}/%(tenant_id)s",
-    admin_url    => "${admin_protocol}://${admin_address}:${real_admin_compute_port}/${compute_version}/%(tenant_id)s",
-    internal_url => "http://${internal_address}:${real_internal_compute_port}/${compute_version}/%(tenant_id)s",
+  if $configure_endpoint {
+    Keystone_endpoint["${region}/${auth_name}"] ~> Service <| name == 'nova-api' |>
+
+    keystone_service { $auth_name:
+      ensure      => present,
+      type        => 'compute',
+      description => 'Openstack Compute Service',
+    }
+
+    keystone_endpoint { "${region}/${auth_name}":
+      ensure       => present,
+      public_url   => "${public_protocol}://${public_address}:${real_public_compute_port}/${compute_version}/%(tenant_id)s",
+      admin_url    => "${admin_protocol}://${admin_address}:${real_admin_compute_port}/${compute_version}/%(tenant_id)s",
+      internal_url => "http://${internal_address}:${real_internal_compute_port}/${compute_version}/%(tenant_id)s",
+    }
   }
 
   if $configure_ec2_endpoint {
