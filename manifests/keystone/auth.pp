@@ -1,7 +1,86 @@
+# == Class: nova::keystone::auth
+#
+# Creates nova endpoints and service account in keystone
+#
+# === Parameters:
+#
+# [*password*]
+#   Password to create for the service user
+#
+# [*auth_name*]
+#   (optional) The name of the nova service user
+#   Defaults to 'nova'
+#
+# [*auth_name_v3*]
+#   (optional) The name of the nova v3 service user
+#   Defaults to 'novav3'
+#
+# [*public_address*]
+#   (optional) The public nova-api endpoint
+#   Defaults to '127.0.0.1'
+#
+# [*admin_address*]
+#   (optional) The admin nova-api endpoint
+#   Defaults to '127.0.0.1'
+#
+# [*internal_address*]
+#   (optional) The internal nova-api endpoint
+#   Defaults to '127.0.0.1'
+#
+# [*compute_port*]
+#   (optional) The port to use for the compute endpoint
+#   Defaults to '8774'
+#
+# [*ec2_port*]
+#   (optional) The port to use for the ec2 endpoint
+#   Defaults to '8773'
+#
+# [*compute_version*]
+#   (optional) The version of the compute api to put in the endpoint
+#   Defaults to 'v2'
+#
+# [*region*]
+#   (optional) The region in which to place the endpoints
+#   Defaults to 'RegionOne'
+#
+# [*tenant*]
+#   (optional) The tenant to use for the nova service user
+#   Defaults to 'services'
+#
+# [*email*]
+#   (optional) The email address for the nova service user
+#   Defaults to 'nova@localhost'
+#
+# [*configure_ec2_endpoint*]
+#   (optional) Whether to create an ec2 endpoint
+#   Defaults to true
+#
+# [*configure_endpoint*]
+#   (optional) Whether to create the endpoint.
+#   Defaults to true
+#
+# [*configure_endpoint_v3*]
+#   (optional) Whether to create the v3 endpoint.
+#   Defaults to true
+#
+# [*cinder*]
+#   (optional) Deprecated and has no effect
+#   Defaults to undef
+#
+# [*public_protocol*]
+#   (optional) Protocol to use for the public endpoint. Can be http or https.
+#   Defaults to 'http'
+#
+# [*admin_protocol*]
+#   Protocol for admin endpoints. Defaults to 'http'.
+#
+# [*internal_protocol*]
+#   Protocol for internal endpoints. Defaults to 'http'.
 #
 class nova::keystone::auth(
   $password,
   $auth_name              = 'nova',
+  $auth_name_v3           = 'novav3',
   $public_address         = '127.0.0.1',
   $admin_address          = '127.0.0.1',
   $internal_address       = '127.0.0.1',
@@ -20,35 +99,15 @@ class nova::keystone::auth(
   $configure_user         = true,
   $cinder                 = undef,
   $public_protocol        = 'http',
-  $admin_protocol         = 'http'
+  $configure_endpoint     = true,
+  $configure_endpoint_v3  = true,
+  $configure_user         = true,
+  $admin_protocol         = 'http',
+  $internal_protocol      = 'http'
 ) {
 
-  if ! $public_compute_port {
-    $real_public_compute_port = $compute_port
-  } else {
-    $real_public_compute_port = $public_compute_port
-  }
-
-  if ! $admin_compute_port {
-    $real_admin_compute_port = $compute_port
-  } else {
-    $real_admin_compute_port = $admin_compute_port
-  }
-
-  if ! $internal_compute_port {
-    $real_internal_compute_port = $compute_port
-  } else {
-    $real_internal_compute_port = $internal_compute_port
-  }
-
-  if ! $public_ec2_port {
-    $real_public_ec2_port = $ec2_port
-  } else {
-    $real_public_ec2_port = $public_ec2_port
-  } 
-
   if $cinder != undef {
-    warning('cinder parameter is deprecated and has no effect.')
+    warning('The cinder parameter is deprecated and has no effect.')
   }
 
   if $configure_user {
@@ -64,20 +123,34 @@ class nova::keystone::auth(
     }
   }
 
+  keystone_service { $auth_name:
+    ensure      => present,
+    type        => 'compute',
+    description => 'Openstack Compute Service',
+  }
+
   if $configure_endpoint {
     Keystone_endpoint["${region}/${auth_name}"] ~> Service <| name == 'nova-api' |>
 
-    keystone_service { $auth_name:
-      ensure      => present,
-      type        => 'compute',
-      description => 'Openstack Compute Service',
-    }
-
     keystone_endpoint { "${region}/${auth_name}":
       ensure       => present,
-      public_url   => "${public_protocol}://${public_address}:${real_public_compute_port}/${compute_version}/%(tenant_id)s",
-      admin_url    => "${admin_protocol}://${admin_address}:${real_admin_compute_port}/${compute_version}/%(tenant_id)s",
-      internal_url => "http://${internal_address}:${real_internal_compute_port}/${compute_version}/%(tenant_id)s",
+      public_url   => "${public_protocol}://${public_address}:${compute_port}/${compute_version}/%(tenant_id)s",
+      admin_url    => "${admin_protocol}://${admin_address}:${compute_port}/${compute_version}/%(tenant_id)s",
+      internal_url => "${internal_protocol}://${internal_address}:${compute_port}/${compute_version}/%(tenant_id)s",
+    }
+  }
+
+  if $configure_endpoint_v3 {
+    keystone_service { $auth_name_v3:
+      ensure      => present,
+      type        => 'computev3',
+      description => 'Openstack Compute Service v3',
+    }
+    keystone_endpoint { "${region}/${auth_name_v3}":
+      ensure       => present,
+      public_url   => "${public_protocol}://${public_address}:${compute_port}/v3",
+      admin_url    => "${admin_protocol}://${admin_address}:${compute_port}/v3",
+      internal_url => "${internal_protocol}://${internal_address}:${compute_port}/v3",
     }
   }
 
@@ -89,9 +162,9 @@ class nova::keystone::auth(
     }
     keystone_endpoint { "${region}/${auth_name}_ec2":
       ensure       => present,
-      public_url   => "${public_protocol}://${public_address}:${real_public_ec2_port}/services/Cloud",
+      public_url   => "${public_protocol}://${public_address}:${ec2_port}/services/Cloud",
       admin_url    => "${admin_protocol}://${admin_address}:${ec2_port}/services/Admin",
-      internal_url => "http://${internal_address}:${ec2_port}/services/Cloud",
+      internal_url => "${internal_protocol}://${internal_address}:${ec2_port}/services/Cloud",
     }
   }
 }

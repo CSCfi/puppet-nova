@@ -1,12 +1,39 @@
+# == Class: nova::rabbitmq
 #
-# class for installing rabbitmq server for nova
+# Installs and manages rabbitmq server for nova
 #
+# == Parameters:
 #
-# ==Parameters
+# [*userid*]
+#   (optional) The username to use when connecting to Rabbit
+#   Defaults to 'guest'
 #
-# [cluster_disk_nodes] Enables/disables RabbitMQ clustering.  Specify an array of Rabbit Broker
-#   IP addresses to configure clustering. Optional.
-#   Defaults to false.
+# [*password*]
+#   (optional) The password to use when connecting to Rabbit
+#   Defaults to 'guest'
+#
+# [*port*]
+#   (optional) The port to use when connecting to Rabbit
+#   Defaults to '5672'
+#
+# [*virtual_host*]
+#   (optional) The virtual host to use when connecting to Rabbit
+#   Defaults to '/'
+#
+# [*cluster_disk_nodes*]
+#   (optional) Enables/disables RabbitMQ clustering.  Specify an array of Rabbit Broker
+#   IP addresses to configure clustering.
+#   Defaults to false
+#
+# [*enabled*]
+#   (optional) Whether to enable the Rabbit service
+#   Defaults to false
+#
+# [*rabbitmq_class*]
+#   (optional) The rabbitmq puppet class to depend on,
+#   which is dependent on the puppet-rabbitmq version.
+#   Use the default for 1.x, use 'rabbitmq' for 3.x
+#   Defaults to 'rabbitmq::server'
 #
 class nova::rabbitmq(
   $userid             ='guest',
@@ -15,11 +42,11 @@ class nova::rabbitmq(
   $virtual_host       ='/',
   $cluster_disk_nodes = false,
   $enabled            = true,
-  $configured         = true
+  $rabbitmq_class     = 'rabbitmq::server'
 ) {
 
   # only configure nova after the queue is up
-  Class['rabbitmq::service'] -> Anchor<| title == 'nova-start' |>
+  Class[$rabbitmq_class] -> Anchor<| title == 'nova-start' |>
 
   if ($configured) {
     if $userid == 'guest' {
@@ -30,7 +57,7 @@ class nova::rabbitmq(
         admin     => true,
         password  => $password,
         provider  => 'rabbitmqctl',
-        require   => Class['rabbitmq::server'],
+        require   => Class[$rabbitmq_class],
       }
       # I need to figure out the appropriate permissions
       rabbitmq_user_permissions { "${userid}@${virtual_host}":
@@ -49,7 +76,7 @@ class nova::rabbitmq(
   }
 
   if $cluster_disk_nodes {
-    class { 'rabbitmq::server':
+    class { $rabbitmq_class:
       service_ensure           => $service_ensure,
       port                     => $port,
       delete_guest_user        => $delete_guest_user,
@@ -58,7 +85,7 @@ class nova::rabbitmq(
       wipe_db_on_cookie_change => true,
     }
   } else {
-    class { 'rabbitmq::server':
+    class { $rabbitmq_class:
       service_ensure    => $service_ensure,
       port              => $port,
       delete_guest_user => $delete_guest_user,
@@ -68,7 +95,7 @@ class nova::rabbitmq(
   if ($configured) {
     rabbitmq_vhost { $virtual_host:
       provider => 'rabbitmqctl',
-      require  => Class['rabbitmq::server'],
+      require  => Class[$rabbitmq_class],
     }
   }
 }

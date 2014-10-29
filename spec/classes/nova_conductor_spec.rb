@@ -6,48 +6,42 @@ describe 'nova::conductor' do
     'include nova'
   end
 
-  context 'on redhat' do
-
-    let :facts do
-      { :osfamily => 'redhat' }
-    end
-
-
-    it { should contain_nova__generic_service('conductor').with(
-      :enabled        => false,
-      :package_name   => 'openstack-nova-conductor',
-      :service_name   => 'openstack-nova-conductor',
-      :ensure_package => 'present'
-    )}
-
-  end
-
-  context 'on debian' do
-
+  context 'on Debian platforms' do
     let :facts do
       { :osfamily => 'Debian' }
     end
 
-    it { should contain_nova__generic_service('conductor').with(
-      :enabled        => false,
-      :package_name   => 'nova-conductor',
-      :service_name   => 'nova-conductor',
-      :ensure_package => 'present'
-    )}
+    it_behaves_like 'generic nova service', {
+      :name         => 'nova-conductor',
+      :package_name => 'nova-conductor',
+      :service_name => 'nova-conductor' }
 
+    it { should_not contain_nova_config('conductor/workers') }
+
+    describe 'when overriding params' do
+      let :params do
+        {:workers => '5' }
+      end
+      it { should contain_nova_config('conductor/workers').with_value('5') }
+    end
   end
 
-  context 'with params' do
+  context 'on RedHat platforms' do
     let :facts do
-      {:osfamily => 'Debian' }
-    end
-    let :params do
-    { :enabled => true, :ensure_package => 'latest' }
+      { :osfamily => 'RedHat' }
     end
 
-    it { should contain_nova__generic_service('conductor').with(
-      :enabled        => true,
-      :ensure_package => 'latest'
-    ) }
+    it_behaves_like 'generic nova service', {
+      :name         => 'nova-conductor',
+      :package_name => 'openstack-nova-conductor',
+      :service_name => 'openstack-nova-conductor' }
+    it { should_not contain_nova_config('conductor/workers') }
+
+    describe 'when overriding params' do
+      let :params do
+        {:workers => '5' }
+      end
+      it { should contain_nova_config('conductor/workers').with_value('5') }
+    end
   end
 end

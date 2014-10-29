@@ -1,15 +1,59 @@
+# == Class: nova::network
 #
-# [private_interface] Interface used by private network.
-# [public_interface] Interface used to connect vms to public network.
-# [fixed_range] Fixed private network range.
-# [num_networks] Number of networks that fixed range network should be
-#  split into.
-# [floating_range] Range of floating ip addresses to create.
-# [enabled] Rather the network service should be enabled.
-# [network_manager] The type of network manager to use.
-# [network_config]
-# [create_networks] Rather actual nova networks should be created using
+# Manages nova-network.
+#
+# An OpenStack deployment that includes compute and networking will use either
+# nova-network or Neutron.  Neutron is newer and nova-network is the legacy
+# networking support built directly into Nova.  However, nova-network is still
+# fully supported, is not feature frozen, and is not yet officially deprecated.
+#
+# === Parameters:
+#
+# [*private_interface*]
+#   (optional) Interface used by private network.
+#   Defaults to undef
+#
+# [*fixed_range*]
+#   (optional) Fixed private network range.
+#   Defaults to '10.0.0.0/8'
+#
+# [*public_interface*]
+#   (optional) Interface used to connect vms to public network.
+#   Defaults to undef
+#
+# [*num_networks*]
+#   (optional) Number of networks that fixed range network should be
+#   split into.
+#   Defaults to 1
+#
+# [*floating_range*]
+#   (optional) Range of floating ip addresses to create.
+#   Defaults to false
+#
+# [*enabled*]
+#   (optional) Whether the network service should be enabled.
+#   Defaults to false
+#
+# [*network_manager*]
+#   (optional) The type of network manager to use.
+#   Defaults to 'nova.network.manager.FlatDHCPManager'
+#
+# [*config_overrides*]
+#   (optional) Additional parameters to pass to the network manager class
+#   Defaults to {}
+#
+# [*create_networks*]
+#   (optional) Whether actual nova networks should be created using
 #   the fixed and floating ranges provided.
+#   Defaults to true
+#
+# [*ensure_package*]
+#   (optional) The state of the nova network package
+#   Defaults to 'present'
+#
+# [*install_service*]
+#   (optional) Whether to install and enable the service
+#   Defaults to true
 #
 class nova::network(
   $private_interface = undef,
