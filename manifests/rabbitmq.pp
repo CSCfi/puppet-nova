@@ -20,7 +20,7 @@
 #   (optional) The virtual host to use when connecting to Rabbit
 #   Defaults to '/'
 #
-# [*cluster_disk_nodes*]
+# [*cluster_nodes*]
 #   (optional) Enables/disables RabbitMQ clustering.  Specify an array of Rabbit Broker
 #   IP addresses to configure clustering.
 #   Defaults to false
