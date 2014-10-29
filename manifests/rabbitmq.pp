@@ -84,14 +84,14 @@ class nova::rabbitmq(
       config_cluster           => true,
       cluster_nodes            => $cluster_nodes,
       wipe_db_on_cookie_change => true,
-      config_variables         => $config_variables,
+      environment_variables    => $environment_variables,
     }
   } else {
     class { $rabbitmq_class:
-      service_ensure    => $service_ensure,
-      port              => $port,
-      delete_guest_user => $delete_guest_user,
-      config_variables  => $config_variables,
+      service_ensure        => $service_ensure,
+      port                  => $port,
+      delete_guest_user     => $delete_guest_user,
+      environment_variables => $environment_variables,
     }
   }
 
