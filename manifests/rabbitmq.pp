@@ -36,14 +36,14 @@
 #   Defaults to 'rabbitmq::server'
 #
 class nova::rabbitmq(
-  $userid             ='guest',
-  $password           ='guest',
-  $port               ='5672',
-  $virtual_host       ='/',
-  $cluster_nodes      = false,
-  $enabled            = true,
-  $config_variables   = {},
-  $rabbitmq_class     = 'rabbitmq'
+  $userid                ='guest',
+  $password              ='guest',
+  $port                  ='5672',
+  $virtual_host          ='/',
+  $cluster_nodes         = false,
+  $enabled               = true,
+  $environment_variables = {},
+  $rabbitmq_class        = 'rabbitmq'
 ) {
 
   # only configure nova after the queue is up
@@ -76,7 +76,7 @@ class nova::rabbitmq(
     $service_ensure = 'stopped'
   }
 
-  if $cluster_disk_nodes {
+  if $cluster_nodes {
     class { $rabbitmq_class:
       service_ensure           => $service_ensure,
       port                     => $port,
