@@ -49,7 +49,7 @@ class nova::rabbitmq(
   # only configure nova after the queue is up
   Class[$rabbitmq_class] -> Anchor<| title == 'nova-start' |>
 
-  if ($configured) {
+  if ($enabled) {
     if $userid == 'guest' {
       $delete_guest_user = false
     } else {
@@ -95,7 +95,7 @@ class nova::rabbitmq(
     }
   }
 
-  if ($configured) {
+  if ($enabled) {
     rabbitmq_vhost { $virtual_host:
       provider => 'rabbitmqctl',
       require  => Class[$rabbitmq_class],
