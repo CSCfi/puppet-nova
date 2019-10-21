@@ -14,6 +14,7 @@ class nova::client(
   include ::nova::deps
 
   package { 'python-novaclient':
+    name   => 'python2-novaclient',
     ensure => $ensure,
     tag    => ['openstack', 'nova-support-package'],
   }
